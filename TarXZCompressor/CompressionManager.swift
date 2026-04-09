@@ -6,7 +6,10 @@ import SWCompression
 enum XZError: Error, LocalizedError {
     case encodingFailed(code: Int32)
     var errorDescription: String? {
-        "liblzma XZ encoding failed with code \(code)"
+        switch self {
+        case .encodingFailed(let code):
+            return "liblzma XZ encoding failed with code \(code)"
+        }
     }
 }
 
