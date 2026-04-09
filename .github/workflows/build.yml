@@ -16,12 +16,12 @@ jobs:
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app
 
-      - name: Install XcodeGen
-        run: brew install xcodegen
+      - name: Install XcodeGen and autotools
+        run: brew install xcodegen autoconf automake libtool
 
       - name: Build liblzma for iOS arm64
         run: |
-          git clone --depth 1 --branch v5.6.3 https://github.com/tukaani-project/xz.git xz-src
+          git clone --branch v5.6.3 https://github.com/tukaani-project/xz.git xz-src
           cd xz-src
           autoreconf -fi
           IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
