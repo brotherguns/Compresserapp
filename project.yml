@@ -17,7 +17,7 @@ targets:
 
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.yourname.tarxzcompressor
+        PRODUCT_BUNDLE_IDENTIFIER: com.yourname.TarXZCompressor
         INFOPLIST_FILE: TarXZCompressor/Info.plist
         SWIFT_OBJC_BRIDGING_HEADER: TarXZCompressor/Bridge/TarXZCompressor-Bridging-Header.h
         SWIFT_VERSION: "5.9"
