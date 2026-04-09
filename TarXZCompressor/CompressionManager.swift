@@ -1,6 +1,28 @@
 import Foundation
 import SWCompression
 
+// MARK: - Errors
+
+enum XZError: Error, LocalizedError {
+    case encodingFailed(code: Int32)
+    var errorDescription: String? {
+        "liblzma XZ encoding failed with code \(code)"
+    }
+}
+
+/// Compress `data` into an XZ stream using liblzma at preset 9 extreme.
+private func compressXZ(_ data: Data) throws -> Data {
+    var outPtr: UnsafeMutablePointer<UInt8>? = nil
+    var outSize: Int = 0
+    let rc = data.withUnsafeBytes { buf in
+        xz_compress(buf.baseAddress?.assumingMemoryBound(to: UInt8.self),
+                    buf.count, &outPtr, &outSize)
+    }
+    guard rc == 0, let ptr = outPtr else { throw XZError.encodingFailed(code: rc) }
+    defer { xz_free(ptr) }
+    return Data(bytes: ptr, count: outSize)
+}
+
 // MARK: - CompressionManager
 
 @MainActor
@@ -43,8 +65,8 @@ class CompressionManager: ObservableObject {
                 // 2 – Pack into tar
                 let tarData = try TarContainer.create(from: entries)
 
-                // 3 – Compress to XZ (LZMA2, highest preset via SWCompression)
-                let xzData  = try XZArchive.archive(data: tarData)
+                // 3 – Compress to XZ (LZMA2, preset 9 extreme via liblzma C bridge)
+                let xzData  = try compressXZ(tarData)
 
                 // 4 – Write output
                 try FileManager.default.createDirectory(at: outDir,
@@ -124,7 +146,6 @@ class CompressionManager: ObservableObject {
                 } else {
                     let data = try Data(contentsOf: item)
                     var info = TarEntryInfo(name: relPath, type: .regular)
-                    info.size = data.count
                     info.permissions    = Permissions(rawValue: 0o644)
                     info.modificationTime = resVals.contentModificationDate
                     entries.append(TarEntry(info: info, data: data))
@@ -139,7 +160,6 @@ class CompressionManager: ObservableObject {
             // Single file
             let data = try Data(contentsOf: root)
             var info = TarEntryInfo(name: rootName, type: .regular)
-            info.size = data.count
             info.permissions  = Permissions(rawValue: 0o644)
             entries.append(TarEntry(info: info, data: data))
 
