@@ -27,6 +27,10 @@ targets:
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGN_IDENTITY: ""
         DEVELOPMENT_TEAM: ""
+        HEADER_SEARCH_PATHS:
+          - "$(PROJECT_DIR)/liblzma-ios/include"
+        LIBRARY_SEARCH_PATHS:
+          - "$(PROJECT_DIR)/liblzma-ios/lib"
         OTHER_LDFLAGS:
           - "-llzma"
 
@@ -42,8 +46,4 @@ targets:
         buildPhase: none
       - path: TarXZCompressor/TarXZCompressor.entitlements
         buildPhase: none
-      - path: TarXZCompressor/Bridge/TarXZCompressor-Bridging-Header.h
-        buildPhase: none
-      - path: TarXZCompressor/Bridge/XZEncoder.h
-        buildPhase: none
-      - path: TarXZCompressor/Bridge/XZEncoder.c
+      - path: TarXZCompressor/Bridge
