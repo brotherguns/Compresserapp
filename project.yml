@@ -19,6 +19,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.yourname.tarxzcompressor
         INFOPLIST_FILE: TarXZCompressor/Info.plist
+        SWIFT_OBJC_BRIDGING_HEADER: TarXZCompressor/Bridge/TarXZCompressor-Bridging-Header.h
         SWIFT_VERSION: "5.9"
         IPHONEOS_DEPLOYMENT_TARGET: "16.0"
         ENABLE_BITCODE: NO
@@ -26,6 +27,8 @@ targets:
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGN_IDENTITY: ""
         DEVELOPMENT_TEAM: ""
+        OTHER_LDFLAGS:
+          - "-llzma"
 
     dependencies:
       - package: SWCompression
@@ -39,3 +42,8 @@ targets:
         buildPhase: none
       - path: TarXZCompressor/TarXZCompressor.entitlements
         buildPhase: none
+      - path: TarXZCompressor/Bridge/TarXZCompressor-Bridging-Header.h
+        buildPhase: none
+      - path: TarXZCompressor/Bridge/XZEncoder.h
+        buildPhase: none
+      - path: TarXZCompressor/Bridge/XZEncoder.c
