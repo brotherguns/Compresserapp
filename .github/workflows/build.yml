@@ -4,17 +4,17 @@ options:
   deploymentTarget:
     iOS: "16.0"
   xcodeVersion: "16"
-
+ 
 packages:
   SWCompression:
     url: https://github.com/tsolomko/SWCompression
     from: "4.8.0"
-
+ 
 targets:
   TarXZCompressor:
     type: application
     platform: iOS
-
+ 
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.yourname.tarxzcompressor
@@ -26,10 +26,10 @@ targets:
         CODE_SIGNING_ALLOWED: NO
         CODE_SIGN_IDENTITY: ""
         DEVELOPMENT_TEAM: ""
-
+ 
     dependencies:
       - package: SWCompression
-
+ 
     sources:
       - path: TarXZCompressor/TarXZCompressorApp.swift
       - path: TarXZCompressor/ContentView.swift
@@ -39,3 +39,4 @@ targets:
         buildPhase: none
       - path: TarXZCompressor/TarXZCompressor.entitlements
         buildPhase: none
+ 
