@@ -5,6 +5,8 @@
 <dict>
     <key>CFBundleDisplayName</key>
     <string>TarXZ Compressor</string>
+    <key>CFBundleExecutable</key>
+    <string>TarXZCompressor</string>
     <key>CFBundleIdentifier</key>
     <string>com.yourname.TarXZCompressor</string>
     <key>CFBundleName</key>
