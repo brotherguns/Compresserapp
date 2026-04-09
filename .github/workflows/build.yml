@@ -19,6 +19,35 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      - name: Build liblzma for iOS arm64
+        run: |
+          git clone --depth 1 --branch v5.6.3 https://github.com/tukaani-project/xz.git xz-src
+          cd xz-src
+          autoreconf -fi
+          IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          ./configure \
+            --host=aarch64-apple-ios \
+            --prefix="$(pwd)/install-ios" \
+            CC="$(xcrun -f clang)" \
+            CFLAGS="-arch arm64 -isysroot $IOS_SDK -mios-version-min=16.0 -O2" \
+            --disable-shared \
+            --enable-static \
+            --disable-nls \
+            --disable-doc \
+            --disable-xz \
+            --disable-xzdec \
+            --disable-lzmadec \
+            --disable-lzmainfo \
+            --disable-scripts \
+            --disable-tests
+          make -j$(sysctl -n hw.logicalcpu)
+          make install
+          mkdir -p ../liblzma-ios/lib ../liblzma-ios/include
+          cp install-ios/lib/liblzma.a ../liblzma-ios/lib/
+          cp -r install-ios/include/lzma.h install-ios/include/lzma ../liblzma-ios/include/
+          echo "liblzma built OK"
+          ls -lh ../liblzma-ios/lib/
+
       - name: Generate Xcode project
         run: xcodegen generate --spec project.yml
 
