@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-/// Compress `input` into an XZ stream (LZMA2, preset 9 extreme).
+/// Compress `input` into an XZ stream (LZMA2, preset 9 extreme, all cores).
 /// On success returns 0, sets *output to a malloc'd buffer and *output_size to
 /// its length. Caller must free *output with xz_free().
 /// On failure returns a non-zero lzma_ret code.
