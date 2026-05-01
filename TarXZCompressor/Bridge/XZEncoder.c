@@ -7,16 +7,23 @@ int xz_compress(const uint8_t *input, size_t input_size,
                 uint8_t **output, size_t *output_size) {
 
     // Use every available core. lzma_stream_encoder_mt splits the input into
-    // independent blocks and compresses them in parallel — on a 6-core A15
-    // this is ~5x faster than the single-threaded easy encoder.
+    // independent blocks and compresses them in parallel.
     uint32_t threads = (uint32_t)sysconf(_SC_NPROCESSORS_ONLN);
     if (threads < 1) threads = 1;
+
+    // Divide input evenly so every core gets a block.
+    // With block_size=0 (auto), liblzma defaults to 3x the dict size (192 MB
+    // for preset 9), meaning a 300 MB input only makes 2 blocks and wastes
+    // 4 of 6 cores. Sizing to input/threads keeps all cores busy.
+    // Floor at 8 MB so tiny inputs don't create degenerate blocks.
+    size_t block_size = input_size / threads;
+    if (block_size < 8 * 1024 * 1024) block_size = 8 * 1024 * 1024;
 
     lzma_mt mt = {
         .flags      = 0,
         .threads    = threads,
-        .block_size = 0,        /* liblzma picks a good block size automatically */
-        .timeout    = 0,        /* no timeout */
+        .block_size = block_size,
+        .timeout    = 0,
         .preset     = 9 | LZMA_PRESET_EXTREME,
         .filters    = NULL,
         .check      = LZMA_CHECK_CRC64,
