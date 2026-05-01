@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import SWCompression
 
 // MARK: - Errors
@@ -60,16 +61,33 @@ class CompressionManager: ObservableObject {
         let stem      = sourceURL.deletingPathExtension().lastPathComponent
         let outFile   = outDir.appendingPathComponent("\(stem).tar.xz")
 
+        // Keep screen on and tell iOS this is active work.
+        // Without these, locking the screen or switching apps suspends the
+        // process mid-compression and it never finishes.
+        UIApplication.shared.isIdleTimerDisabled = true
+        let bgTask = UIApplication.shared.beginBackgroundTask(withName: "TarXZ") {
+            // Expiration handler: iOS is about to kill us (~30 s after backgrounding).
+            // Nothing reliable to do here — the error path below will fire when
+            // the task is cancelled, surfacing a clean error message.
+        }
+
         Task.detached(priority: .userInitiated) { [weak self] in
             guard let self else { return }
             do {
-                // 1 – Collect all entries
-                let entries = try await self.buildEntries(from: sourceURL)
-
-                // 2 – Pack into tar
-                let tarData = try TarContainer.create(from: entries)
+                // 1 & 2 – Collect entries and pack into tar.
+                // Wrapped in their own scope so `entries` is released before
+                // lzma allocates its buffers — otherwise peak RAM is
+                // entries + tarData + lzmaOutputBuffer all at once.
+                await MainActor.run { self.currentFile = "Scanning files…" }
+                let tarData: Data
+                do {
+                    let entries = try await self.buildEntries(from: sourceURL)
+                    await MainActor.run { self.currentFile = "Building tar archive…" }
+                    tarData = try TarContainer.create(from: entries)
+                } // entries freed here
 
                 // 3 – Compress to XZ (LZMA2, preset 9 extreme via liblzma C bridge)
+                await MainActor.run { self.currentFile = "Compressing to XZ…" }
                 let xzData  = try compressXZ(tarData)
 
                 // 4 – Write output
@@ -78,6 +96,8 @@ class CompressionManager: ObservableObject {
                 try xzData.write(to: outFile, options: .atomic)
 
                 await MainActor.run {
+                    UIApplication.shared.isIdleTimerDisabled = false
+                    UIApplication.shared.endBackgroundTask(bgTask)
                     self.isCompressing = false
                     self.finished      = true
                     self.outputURL     = outFile
@@ -85,6 +105,8 @@ class CompressionManager: ObservableObject {
 
             } catch {
                 await MainActor.run {
+                    UIApplication.shared.isIdleTimerDisabled = false
+                    UIApplication.shared.endBackgroundTask(bgTask)
                     self.isCompressing = false
                     self.finished      = true
                     self.lastError     = error.localizedDescription
