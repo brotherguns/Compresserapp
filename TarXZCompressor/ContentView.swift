@@ -205,7 +205,7 @@ struct ContentView: View {
 struct ItemRow: View {
     let url:        URL
     let isSelected: Bool
-    let manager:    CompressionManager
+    @ObservedObject var manager: CompressionManager
     let onTap:      () -> Void
 
     @State private var subtitle: String = ""

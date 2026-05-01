@@ -60,7 +60,8 @@ class CompressionManager: ObservableObject {
         let stem      = sourceURL.deletingPathExtension().lastPathComponent
         let outFile   = outDir.appendingPathComponent("\(stem).tar.xz")
 
-        Task.detached(priority: .userInitiated) {
+        Task.detached(priority: .userInitiated) { [weak self] in
+            guard let self else { return }
             do {
                 // 1 – Collect all entries
                 let entries = try await self.buildEntries(from: sourceURL)
@@ -95,7 +96,7 @@ class CompressionManager: ObservableObject {
     // ── Private helpers ────────────────────────────────────────────────
 
     /// Recursively walk `root` and return one TarEntry per file/symlink/dir.
-    private func buildEntries(from root: URL) async throws -> [TarEntry] {
+    private nonisolated func buildEntries(from root: URL) async throws -> [TarEntry] {
         var entries: [TarEntry] = []
         let fm = FileManager.default
         let rootName = root.lastPathComponent
@@ -161,9 +162,11 @@ class CompressionManager: ObservableObject {
 
         } else {
             // Single file
+            let resVals = try root.resourceValues(forKeys: [.contentModificationDateKey])
             let data = try Data(contentsOf: root)
             var info = TarEntryInfo(name: rootName, type: .regular)
-            info.permissions  = Permissions(rawValue: 0o644)
+            info.permissions     = Permissions(rawValue: 0o644)
+            info.modificationTime = resVals.contentModificationDate
             entries.append(TarEntry(info: info, data: data))
 
             await MainActor.run {
